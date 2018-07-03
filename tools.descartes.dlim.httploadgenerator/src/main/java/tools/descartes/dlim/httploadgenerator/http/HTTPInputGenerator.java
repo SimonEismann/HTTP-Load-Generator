@@ -21,6 +21,7 @@ import java.util.logging.Logger;
 
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.client.util.StringContentProvider;
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
@@ -101,6 +102,7 @@ public class HTTPInputGenerator {
 			 request = httpClient.POST(url);
 		} else {
 			request = httpClient.newRequest(url);
+			request = request.content(new StringContentProvider("Lorem Ipsum"));
 		}
 		request = request.header("User-Agent", USER_AGENT);
 		if (timeout > 0) {
