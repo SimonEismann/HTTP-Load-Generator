@@ -16,9 +16,12 @@
 package tools.descartes.dlim.httploadgenerator.generator;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -27,6 +30,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+
+import javafx.util.Pair;
 import tools.descartes.dlim.httploadgenerator.http.HTTPInputGeneratorPool;
 import tools.descartes.dlim.httploadgenerator.http.HTTPTransaction;
 import tools.descartes.dlim.httploadgenerator.runner.IRunnerConstants;
@@ -193,6 +200,22 @@ public class ArrivalRateTupleLoadGenerator extends AbstractLoadGenerator {
 		} catch (InterruptedException e) {
 			LOG.log(Level.SEVERE, "Interrupted: " + e.getMessage());
 		}
+		writeTimestampLogs();
+	}
+
+	private void writeTimestampLogs() {
+		 try {
+			BufferedWriter writer = Files.newBufferedWriter(Paths.get("./timestamps.csv"));
+			CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT
+                    .withHeader("Start", "Stop"));
+			for (Pair<Long, Long> pair: ResultTracker.TRACKER.getTimestamps())
+				csvPrinter.printRecord(pair.getKey(), pair.getValue());
+			csvPrinter.flush();
+			csvPrinter.close();
+		 } catch (IOException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 	/**

@@ -73,7 +73,9 @@ public class HTTPTransaction extends Transaction {
 				throw new TransactionInvalidException("Error code: " + response.getStatus());
 			} else {
 				String responseBody = response.getContentAsString();
-				ResultTracker.TRACKER.logResponseTime(System.currentTimeMillis() - processStartTime);
+				long processStopTime = System.currentTimeMillis();
+				ResultTracker.TRACKER.logResponseTime(processStopTime - processStartTime);
+				ResultTracker.TRACKER.addResponseTimestamps(processStartTime, processStopTime);
 				
 				//store result
 				generator.resetHTMLFunctions(responseBody);
