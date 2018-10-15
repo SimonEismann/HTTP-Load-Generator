@@ -47,9 +47,9 @@ public class HTTPTransaction extends Transaction {
 	/**
 	 * Processes the transaction of sending a GET request to a web server.
 	 * @param generator The input generator to use.
-	 * @return HTML Response of the web server.
+	 * @return Response time in milliseconds.
 	 */
-	public String process(HTTPInputGenerator generator) throws TransactionDroppedException, TransactionInvalidException {
+	public long process(HTTPInputGenerator generator) throws TransactionDroppedException, TransactionInvalidException {
 		long processStartTime = System.currentTimeMillis();
 		if (generator.getTimeout() > 0 && processStartTime - getStartTime() > generator.getTimeout()) {
 			throw new TransactionDroppedException("Wait time in queue too long. "
@@ -74,12 +74,12 @@ public class HTTPTransaction extends Transaction {
 			} else {
 				String responseBody = response.getContentAsString();
 				long processStopTime = System.currentTimeMillis();
-				ResultTracker.TRACKER.logResponseTime(processStopTime - processStartTime);
 				ResultTracker.TRACKER.addResponseTimestamps(url, processStartTime, processStopTime);
+				long responseTime = System.currentTimeMillis() - processStartTime;
 				
 				//store result
 				generator.resetHTMLFunctions(responseBody);
-				return responseBody;
+				return responseTime;
 			}
 		} catch (TimeoutException e) {
 			generator.revertLastCall();
@@ -88,25 +88,29 @@ public class HTTPTransaction extends Transaction {
 				LOG.log(Level.SEVERE, "ExecutionException in call for URL: " + url + "; Cause: " + e.getCause().toString());
 			}
 			generator.revertLastCall();
+			throw new TransactionInvalidException("ExecutionException: " + e.getMessage());
 		} catch (CancellationException e) {
 			LOG.log(Level.SEVERE, "CancellationException: " + url + "; " + e.getMessage());
 			generator.revertLastCall();
+			throw new TransactionInvalidException("CancellationException: " + e.getMessage());
 		} catch (InterruptedException e) {
 			LOG.log(Level.SEVERE, "InterruptedException: " + e.getMessage());
 			generator.revertLastCall();
+			throw new TransactionInvalidException("InterruptedException: " + e.getMessage());
 		}
-		return null;
+		return 0;
 	}
 
 	@Override
 	public void run() {
 		HTTPInputGenerator generator = HTTPInputGeneratorPool.getPool().takeFromPool();
 		try {
-			this.process(generator);
+			long responseTime = this.process(generator);
+			ResultTracker.TRACKER.logTransaction(responseTime, ResultTracker.TransactionState.SUCCESS);
 		} catch (TransactionDroppedException e) {
-			ResultTracker.TRACKER.incrementDroppedTransactionCount();
+			ResultTracker.TRACKER.logTransaction(0, ResultTracker.TransactionState.DROPPED);
 		} catch (TransactionInvalidException e) {
-			ResultTracker.TRACKER.incrementInvalidTransactionCount();
+			ResultTracker.TRACKER.logTransaction(0, ResultTracker.TransactionState.FAILED);
 		}
 		HTTPInputGeneratorPool.getPool().releaseBackToPool(generator);
 		TransactionQueueSingleton transactionQueue = TransactionQueueSingleton.getInstance();

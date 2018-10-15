@@ -19,6 +19,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Logger;
 import tools.descartes.dlim.httploadgenerator.http.ResponseTimeLog;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Offers tracking of results, such as response times and
@@ -27,108 +29,120 @@ import tools.descartes.dlim.httploadgenerator.http.ResponseTimeLog;
  *
  */
 public final class ResultTracker {
-
-	private static final Logger LOG = Logger.getLogger(ResultTracker.class.getName());
 	
 	/**
 	 * The tracker singleton.
 	 */
 	public static final ResultTracker TRACKER = new ResultTracker();
 	
-	private long invalidTransactionsPerMeasurementInterval = 0;
-	private long invalidTransactionsTotal = 0;
-	private long droppedTransactionsPerMeasurementInterval = 0;
-	private long droppedTransactionsTotal = 0;
+	private ReentrantLock transactionLock = new ReentrantLock();
 	
-	private BlockingQueue<Long> responseTimeQueue = new LinkedBlockingQueue<>();
+	private AtomicLong invalidTransactionsPerMeasurementInterval = new AtomicLong(0);
+	private AtomicLong invalidTransactionsTotal = new AtomicLong(0);
+	private AtomicLong droppedTransactionsPerMeasurementInterval = new AtomicLong(0);
+	private AtomicLong droppedTransactionsTotal = new AtomicLong(0);
+	private AtomicLong successfulTransactionsPerMeasurementInterval = new AtomicLong(0);
+	private AtomicLong successfulTransactionsTotal = new AtomicLong(0);
+	
 	private BlockingQueue<ResponseTimeLog> responseTimestamps = new LinkedBlockingQueue<>();
+	private AtomicLong responseTimeSum = new AtomicLong(0);
+	private AtomicLong responseTimeLogCount = new AtomicLong(0);
 	
 	private ResultTracker() {
 		
-	}
-	
-	/**
-	 * Resets the validity tracker.
-	 */
-	public synchronized void reset() {
-		invalidTransactionsPerMeasurementInterval = 0;
-		invalidTransactionsTotal = 0;
-		droppedTransactionsPerMeasurementInterval = 0;
-		droppedTransactionsTotal = 0;
-		responseTimeQueue.clear();
-		responseTimestamps.clear();
 	}
 	
 	public synchronized void addResponseTimestamps(String url, long start, long stop) {
 		responseTimestamps.add(new ResponseTimeLog(url, start, stop));
 	}
 	
-	/**
-	 * Adds an invalid transaction to the counter.
-	 */
-	public synchronized void incrementInvalidTransactionCount() {
-		invalidTransactionsPerMeasurementInterval++;
-		invalidTransactionsTotal++;
-	}
+public void logTransaction(long responseTimeMs, TransactionState finishingState) {
+		transactionLock.lock();
+		try {
+			switch (finishingState) {
+				case FAILED:
+					invalidTransactionsPerMeasurementInterval.incrementAndGet();
+					invalidTransactionsTotal.incrementAndGet();
+					break;
+				case DROPPED:
+					droppedTransactionsPerMeasurementInterval.incrementAndGet();
+					droppedTransactionsTotal.incrementAndGet();
+					break;
+				default:
+					responseTimeSum.addAndGet(responseTimeMs);
+					responseTimeLogCount.incrementAndGet();
+					successfulTransactionsPerMeasurementInterval.incrementAndGet();
+					successfulTransactionsTotal.incrementAndGet();
+					break;
+			}
+		} finally {
+			transactionLock.unlock();
+		}
+}
 	
 	/**
-	 * Adds an dropped transaction to the counter.
+	 * Resets the validity tracker.
 	 */
-	public synchronized void incrementDroppedTransactionCount() {
-		droppedTransactionsPerMeasurementInterval++;
-		droppedTransactionsTotal++;
+	public void reset() {
+		transactionLock.lock();
+		try {
+			invalidTransactionsPerMeasurementInterval.set(0);
+			invalidTransactionsTotal.set(0);
+			droppedTransactionsPerMeasurementInterval.set(0);
+			droppedTransactionsTotal.set(0);
+			successfulTransactionsPerMeasurementInterval.set(0);
+			successfulTransactionsTotal.set(0);
+			responseTimeSum.set(0);
+			responseTimeLogCount.set(0);
+		} finally {
+			transactionLock.unlock();
+		}
 	}
 	
-	/**
-	 * Returns the current invalid transaction count and resets the counter.
-	 * @return The current invalid transaction count.
-	 */
-	public synchronized long getAndResetInvalidTransactionCount() {
-		long tmpCount = invalidTransactionsPerMeasurementInterval;
-		invalidTransactionsPerMeasurementInterval = 0;
-		return tmpCount;
-	}
-	
-	/**
-	 * Returns the current dropped transaction count and resets the counter.
-	 * @return The current dropped transaction count.
-	 */
-	public synchronized long getAndResetDroppedTransactionCount() {
-		long tmpCount = droppedTransactionsPerMeasurementInterval;
-		droppedTransactionsPerMeasurementInterval = 0;
-		return tmpCount;
-	}
 	
 	/**
 	 * Returns the total invalid transaction counter since initialization or the last call of {@link #reset()}.
 	 * @return The total invalid transaction counter.
 	 */
-	public synchronized long getTotalInvalidTransactionCount() {
-		return invalidTransactionsTotal;
+	public long getTotalInvalidTransactionCount() {
+		long invTrans;
+		transactionLock.lock();
+		try {
+			invTrans = invalidTransactionsTotal.get();
+		} finally {
+			transactionLock.unlock();
+		}
+		return invTrans;
+	}
+	
+	/**
+	 * Returns the total successful transaction counter since initialization or the last call of {@link #reset()}.
+	 * @return The total successful transaction counter.
+	 */
+	public long getTotalSuccessfulTransactionCount() {
+		long sucTrans;
+		transactionLock.lock();
+		try {
+			sucTrans = successfulTransactionsTotal.get();
+		} finally {
+			transactionLock.unlock();
+		}
+		return sucTrans;
 	}
 	
 	/**
 	 * Returns the total dropped transaction counter since initialization or the last call of {@link #reset()}.
 	 * @return The total dropped transaction counter.
 	 */
-	public synchronized long getTotalDroppedTransactionCount() {
-		return droppedTransactionsTotal;
-	}
-	
-	public synchronized BlockingQueue<ResponseTimeLog> getTimestamps() {
-		return this.responseTimestamps;
-	}
-	
-	/**
-	 * Append a response time measurement (in ms) to the logging queue.
-	 * @param responseTimeMs The resonse time in ms.
-	 */
-	public void logResponseTime(long responseTimeMs) {
+	public long getTotalDroppedTransactionCount() {
+		long dropTrans;
+		transactionLock.lock();
 		try {
-			responseTimeQueue.put(responseTimeMs);
-		} catch (InterruptedException e) {
-			LOG.severe("Error logging response time: " + e.getMessage());
+			dropTrans = droppedTransactionsTotal.get();
+		} finally {
+			transactionLock.unlock();
 		}
+		return dropTrans;
 	}
 	
 	/**
@@ -136,17 +150,98 @@ public final class ResultTracker {
 	 * Clears the result storage for new results.
 	 * @return The average response time in seconds.
 	 */
-	public double getAverageResponseTimeInS() {
-		 Long timems;
-		 int count = 0;
-		 double timeSumInS = 0.0;
-		 while ((timems = responseTimeQueue.poll()) != null) {
-			 count++;
-			 timeSumInS += (double) timems / 1000.0;
-		 }
-		 if (count == 0) {
-			 return 0.0;
-		 }
-		 return timeSumInS / count;
+	private double getAverageResponseTimeInS() {
+		long avgResponseTimeMs;
+			if (responseTimeLogCount.get() == 0) {
+				avgResponseTimeMs = 0;
+			} else {
+				avgResponseTimeMs = responseTimeSum.getAndSet(0) / responseTimeLogCount.getAndSet(0);
+			}
+		return ((double) avgResponseTimeMs) / 1000.0;
+	}
+	
+	public IntervalResult retreiveIntervalResultAndReset() {
+		IntervalResult result = new IntervalResult();
+		transactionLock.lock();
+		try {
+			result.droppedTransactions = droppedTransactionsPerMeasurementInterval.getAndSet(0);
+			result.failedTransactions = invalidTransactionsPerMeasurementInterval.getAndSet(0);
+			result.successfulTransactions = successfulTransactionsPerMeasurementInterval.getAndSet(0);
+			result.averageResponseTimeInS = getAverageResponseTimeInS();
+		} finally {
+			transactionLock.unlock();
+		}
+		return result;
+	}
+	
+	public synchronized BlockingQueue<ResponseTimeLog> getTimestamps() {
+		return this.responseTimestamps;
+	}
+	
+	/**
+	 * States that a transaction may have upon finishing.
+	 * @author Joakim von Kistowski
+	 *
+	 */
+	public static enum TransactionState {
+		/**
+		 * Transaction finished successfully.
+		 */
+		SUCCESS,
+		/**
+		 * Transaction failed.
+		 */
+		FAILED,
+		/**
+		 * Transaction was dropped and never executed.
+		 */
+		DROPPED;
+	}
+	
+	/**
+	 * Result of a measurement interval.
+	 * @author Joakim von Kistowski
+	 */
+	public static class IntervalResult {
+		
+		private long droppedTransactions = 0;
+		private long failedTransactions = 0;
+		private long successfulTransactions = 0;
+		private double averageResponseTimeInS = 0.0;
+		
+		private IntervalResult() { }
+		
+		/**
+		 * Returns the number of dropped transactions.
+		 * @return The number of dropped transactions.
+		 */
+		public long getDroppedTransactions() {
+			return droppedTransactions;
+		}
+
+		/**
+		 * Returns the number of failed transactions.
+		 * @return The number of failed transactions.
+		 */
+		public long getFailedTransactions() {
+			return failedTransactions;
+		}
+
+		/**
+		 * Returns the number of successful transactions.
+		 * @return The number of successful transactions
+		 */
+		public long getSuccessfulTransactions() {
+			return successfulTransactions;
+		}
+
+		/**
+		 * Returns the average response time in Seconds.
+		 * @return The average response time.
+		 */
+		public double getAverageResponseTimeInS() {
+			return averageResponseTimeInS;
+		}
+
 	}
 }
