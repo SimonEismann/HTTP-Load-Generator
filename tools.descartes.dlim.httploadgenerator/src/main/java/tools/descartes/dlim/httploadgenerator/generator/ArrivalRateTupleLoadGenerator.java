@@ -33,9 +33,9 @@ import java.util.logging.Logger;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
-import javafx.util.Pair;
 import tools.descartes.dlim.httploadgenerator.http.HTTPInputGeneratorPool;
 import tools.descartes.dlim.httploadgenerator.http.HTTPTransaction;
+import tools.descartes.dlim.httploadgenerator.http.ResponseTimeLog;
 import tools.descartes.dlim.httploadgenerator.runner.IRunnerConstants;
 import tools.descartes.dlim.httploadgenerator.transaction.TransactionBatch;
 import tools.descartes.dlim.httploadgenerator.transaction.TransactionQueueSingleton;
@@ -207,9 +207,9 @@ public class ArrivalRateTupleLoadGenerator extends AbstractLoadGenerator {
 		 try {
 			BufferedWriter writer = Files.newBufferedWriter(Paths.get("./timestamps.csv"));
 			CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT
-                    .withHeader("Start", "Stop"));
-			for (Pair<Long, Long> pair: ResultTracker.TRACKER.getTimestamps())
-				csvPrinter.printRecord(pair.getKey(), pair.getValue());
+                    .withHeader("Url", "Start", "Stop"));
+			for (ResponseTimeLog pair: ResultTracker.TRACKER.getTimestamps())
+				csvPrinter.printRecord(pair.url, pair.start, pair.end);
 			csvPrinter.flush();
 			csvPrinter.close();
 		 } catch (IOException e) {

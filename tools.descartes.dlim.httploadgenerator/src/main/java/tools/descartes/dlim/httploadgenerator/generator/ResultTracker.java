@@ -18,7 +18,7 @@ package tools.descartes.dlim.httploadgenerator.generator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Logger;
-import javafx.util.Pair;
+import tools.descartes.dlim.httploadgenerator.http.ResponseTimeLog;
 
 /**
  * Offers tracking of results, such as response times and
@@ -41,7 +41,7 @@ public final class ResultTracker {
 	private long droppedTransactionsTotal = 0;
 	
 	private BlockingQueue<Long> responseTimeQueue = new LinkedBlockingQueue<>();
-	private BlockingQueue<Pair<Long,Long>> responseTimestamps = new LinkedBlockingQueue<>();
+	private BlockingQueue<ResponseTimeLog> responseTimestamps = new LinkedBlockingQueue<>();
 	
 	private ResultTracker() {
 		
@@ -59,8 +59,8 @@ public final class ResultTracker {
 		responseTimestamps.clear();
 	}
 	
-	public synchronized void addResponseTimestamps(long start, long stop) {
-		responseTimestamps.add(new Pair<Long, Long>(start, stop));
+	public synchronized void addResponseTimestamps(String url, long start, long stop) {
+		responseTimestamps.add(new ResponseTimeLog(url, start, stop));
 	}
 	
 	/**
@@ -115,7 +115,7 @@ public final class ResultTracker {
 		return droppedTransactionsTotal;
 	}
 	
-	public synchronized BlockingQueue<Pair<Long, Long>> getTimestamps() {
+	public synchronized BlockingQueue<ResponseTimeLog> getTimestamps() {
 		return this.responseTimestamps;
 	}
 	

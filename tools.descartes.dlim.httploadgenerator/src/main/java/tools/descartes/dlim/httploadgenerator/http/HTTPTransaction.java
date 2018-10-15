@@ -75,7 +75,7 @@ public class HTTPTransaction extends Transaction {
 				String responseBody = response.getContentAsString();
 				long processStopTime = System.currentTimeMillis();
 				ResultTracker.TRACKER.logResponseTime(processStopTime - processStartTime);
-				ResultTracker.TRACKER.addResponseTimestamps(processStartTime, processStopTime);
+				ResultTracker.TRACKER.addResponseTimestamps(url, processStartTime, processStopTime);
 				
 				//store result
 				generator.resetHTMLFunctions(responseBody);
