@@ -50,7 +50,7 @@ public class HTTPTransaction extends Transaction {
 	 * @return Response time in milliseconds.
 	 */
 	public long process(HTTPInputGenerator generator) throws TransactionDroppedException, TransactionInvalidException {
-		long processStartTime = System.currentTimeMillis();
+		long processStartTime = System.nanoTime();
 		if (generator.getTimeout() > 0 && processStartTime - getStartTime() > generator.getTimeout()) {
 			throw new TransactionDroppedException("Wait time in queue too long. "
 					+ String.valueOf(processStartTime - getStartTime()) + " ms passed before transaction was even started.");
@@ -73,9 +73,9 @@ public class HTTPTransaction extends Transaction {
 				throw new TransactionInvalidException("Error code: " + response.getStatus());
 			} else {
 				String responseBody = response.getContentAsString();
-				long processStopTime = System.currentTimeMillis();
+				long processStopTime = System.nanoTime();
 				ResultTracker.TRACKER.addResponseTimestamps(url, processStartTime, processStopTime);
-				long responseTime = System.currentTimeMillis() - processStartTime;
+				long responseTime = (processStopTime - processStartTime) * 1000000;
 				
 				//store result
 				generator.resetHTMLFunctions(responseBody);
