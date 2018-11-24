@@ -276,7 +276,7 @@ public class ArrivalRateTupleLoadGenerator extends AbstractLoadGenerator {
 	private long calculateMeanWaitTime(long defaultMeanWaitTime, long targetTime, long currentTime,
 			int targetArrivalsInInterval) {
 		long meanWaitTime = defaultMeanWaitTime;
-		if (targetArrivalsInInterval < 10 && targetArrivalsInInterval > 1) {
+		if (targetArrivalsInInterval < 100 && targetArrivalsInInterval > 1) {
 			meanWaitTime = (targetTime - currentTime) / targetArrivalsInInterval; 
 		}
 		return meanWaitTime;
