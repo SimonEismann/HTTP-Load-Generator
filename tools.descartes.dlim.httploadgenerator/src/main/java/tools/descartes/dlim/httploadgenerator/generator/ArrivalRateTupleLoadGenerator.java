@@ -123,7 +123,7 @@ public class ArrivalRateTupleLoadGenerator extends AbstractLoadGenerator {
 			 * Mean wait time between batches of transactions is 10 ms or 1/10th
 			 * of the time between two arrival rate tuples.
 			 */
-			int defaultMeanWaitTime = Math.min(10, (int) (arrRates.get(0).getTimeStamp() * 1000) / 10);
+			int defaultMeanWaitTime = (int) (arrRates.get(0).getTimeStamp() * 1000) / 10;
 			
 			clearResultTracker();
 			
@@ -277,7 +277,7 @@ public class ArrivalRateTupleLoadGenerator extends AbstractLoadGenerator {
 			int targetArrivalsInInterval) {
 		long meanWaitTime = defaultMeanWaitTime;
 		if (targetArrivalsInInterval < 100 && targetArrivalsInInterval > 1) {
-			meanWaitTime = (targetTime - currentTime) / targetArrivalsInInterval; 
+			meanWaitTime = (targetTime - currentTime) / targetArrivalsInInterval;
 		}
 		return meanWaitTime;
 	}
@@ -294,9 +294,8 @@ public class ArrivalRateTupleLoadGenerator extends AbstractLoadGenerator {
 		}
 
 		// Exponential Random Variable with meanWaitTime as mean
-		double randomWaitTime = (0.5 * meanWaitTime) + (-Math.log(r.nextDouble())) * meanWaitTime / 2.0;
+		double randomWaitTime = (-Math.log(r.nextDouble())) * meanWaitTime;
 		// clamp
-		randomWaitTime = Math.max(0.5 * meanWaitTime, randomWaitTime);
 		randomWaitTime = Math.min(1.5 * meanWaitTime, randomWaitTime);
 		return (long) randomWaitTime;
 	}
