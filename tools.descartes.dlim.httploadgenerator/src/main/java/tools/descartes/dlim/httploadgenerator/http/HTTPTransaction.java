@@ -75,7 +75,7 @@ public class HTTPTransaction extends Transaction {
 				String responseBody = response.getContentAsString();
 				long processStopTime = System.nanoTime();
 				ResultTracker.TRACKER.addResponseTimestamps(url, processStartTime, processStopTime);
-				long responseTime = (processStopTime - processStartTime) * 1000000;
+				long responseTime = (processStopTime - processStartTime) / 1000000;
 				
 				//store result
 				generator.resetHTMLFunctions(responseBody);
