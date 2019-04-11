@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 
 import tools.descartes.dlim.httploadgenerator.generator.ArrivalRateTuple;
 import tools.descartes.dlim.httploadgenerator.power.IPowerCommunicator;
+import tools.descartes.dlim.httploadgenerator.generator.ResultTracker;
 
 /**
  * Director that is run in director mode.
@@ -220,7 +221,7 @@ public class Director extends Thread {
 				writer.println("," + timeZeroString);
 			}
 			
-			ResultTracker.getTimestamps().clear();
+			ResultTracker.TRACKER.getTimestamps().clear();
 			
 			//get Data from LoadGenerator
 			IntervalResult result;
