@@ -220,6 +220,8 @@ public class Director extends Thread {
 				writer.println("," + timeZeroString);
 			}
 			
+			ResultTracker.getTimestamps().clear();
+			
 			//get Data from LoadGenerator
 			IntervalResult result;
 			while (!(result = collectResultRound()).isMeasurementConcluded()) {
