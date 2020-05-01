@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 /**
  * Copyright 2017 Joakim von Kistowski
  *
@@ -29,8 +28,8 @@ import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 import tools.descartes.dlim.httploadgenerator.generator.ArrivalRateTuple;
-import tools.descartes.dlim.httploadgenerator.power.IPowerCommunicator;
 import tools.descartes.dlim.httploadgenerator.generator.ResultTracker;
+import tools.descartes.dlim.httploadgenerator.power.IPowerCommunicator;
 
 /**
  * Director that is run in director mode.
