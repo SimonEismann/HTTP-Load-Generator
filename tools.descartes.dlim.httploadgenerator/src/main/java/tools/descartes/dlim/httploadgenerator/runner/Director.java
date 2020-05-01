@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /**
  * Copyright 2017 Joakim von Kistowski
  *
@@ -79,8 +80,11 @@ public class Director extends Thread {
 				return;
 			}
 
-			String[] generatorIPs = generators.split(",");
-			String[] powerIPs = powerAddresses.split(",");
+			String[] generatorIPs = generators.split(",");				
+			String[] powerIPs = null;
+			if (powerAddresses != null && !powerAddresses.isEmpty()) {
+				powerIPs = powerAddresses.split(",");
+			}
 			
 			//Power measurement
 			if (powerCommunicatorClassName != null && !powerCommunicatorClassName.trim().isEmpty()
