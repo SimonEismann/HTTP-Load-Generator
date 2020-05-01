@@ -64,14 +64,11 @@ public class HTTPTransaction extends Transaction {
 			}
 			url = url.replaceFirst("\\[.*\\]", "");
 			if (url.startsWith("{")) {
-				payload = url.substring(0, url.indexOf("}"));
-				url = url.substring(url.indexOf("}"));
-				System.out.println("Payload: " + payload);
-				System.out.println("Url: " + url);
+				payload = url.substring(0, url.indexOf("}") + 1);
+				url = url.substring(url.indexOf("}") + 1);
 			}
 		}
 		Request request = generator.initializeHTTPRequest(url, method, payload);
-		
 		try {
 			ContentResponse response = request.send();
 			if (response.getStatus() >= 400) {
@@ -93,6 +90,7 @@ public class HTTPTransaction extends Transaction {
 		} catch (ExecutionException e) {
 			if (e.getCause() == null || !(e.getCause() instanceof TimeoutException)) {
 				LOG.log(Level.SEVERE, "ExecutionException in call for URL: " + url + "; Cause: " + e.getCause().toString());
+				e.printStackTrace();
 			}
 			generator.revertLastCall();
 			throw new TransactionInvalidException("ExecutionException: " + e.getMessage());

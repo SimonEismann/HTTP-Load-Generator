@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.util.StringContentProvider;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
@@ -69,7 +70,8 @@ public class HTTPInputGenerator {
 	 */
 	public HTTPInputGenerator(int id, File scriptFile, int randomSeed, int timeout) {
 		this.id = id;
-		httpClient = new HttpClient();
+		SslContextFactory sslContextFactory = new SslContextFactory();
+		httpClient = new HttpClient(sslContextFactory);
 		
 		if (timeout > 0) {
 			httpClient.setConnectTimeout(timeout);
