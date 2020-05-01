@@ -57,13 +57,20 @@ public class HTTPTransaction extends Transaction {
 		}
 		String url = generator.getNextInput().trim();
 		String method = "GET";
+		String payload = null;
 		if (url.startsWith("[")) {
 			if (url.startsWith(POST_SIGNAL)) {
 				method = "POST";
 			}
 			url = url.replaceFirst("\\[.*\\]", "");
+			if (url.startsWith("{")) {
+				payload = url.substring(0, url.indexOf("}"));
+				url = url.substring(url.indexOf("}"));
+				System.out.println("Payload: " + payload);
+				System.out.println("Url: " + url);
+			}
 		}
-		Request request = generator.initializeHTTPRequest(url, method);
+		Request request = generator.initializeHTTPRequest(url, method, payload);
 		
 		try {
 			ContentResponse response = request.send();
