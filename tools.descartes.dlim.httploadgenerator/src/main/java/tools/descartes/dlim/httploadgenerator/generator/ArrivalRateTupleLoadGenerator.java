@@ -208,6 +208,7 @@ public class ArrivalRateTupleLoadGenerator extends AbstractLoadGenerator {
 				csvPrinter.printRecord(pair.url, pair.start, pair.end);
 			csvPrinter.flush();
 			csvPrinter.close();
+			ResultTracker.TRACKER.getTimestamps().clear();
 		 } catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -58,19 +58,26 @@ public class HTTPTransaction extends Transaction {
 		String url = generator.getNextInput().trim();
 		String method = "GET";
 		String payload = null;
+		String auth = null;
 		if (url.startsWith("[")) {
 			if (url.startsWith(POST_SIGNAL)) {
 				method = "POST";
 			}
 			url = url.replaceFirst("\\[.*\\]", "");
+			if (url.startsWith("(")) {
+				auth = url.substring(1, url.indexOf(")"));
+				url = url.substring(url.indexOf(")") + 1);
+			}
 			if (url.startsWith("{")) {
-				payload = url.substring(0, url.indexOf("}") + 1);
-				url = url.substring(url.indexOf("}") + 1);
+				payload = url.substring(0, url.lastIndexOf("}") + 1);
+				url = url.substring(url.lastIndexOf("}") + 1);
 			}
 		}
-		Request request = generator.initializeHTTPRequest(url, method, payload);
+
+		Request request = generator.initializeHTTPRequest(url, method, payload, auth);
 		try {
 			ContentResponse response = request.send();
+			System.out.println(response.getContentAsString());
 			if (response.getStatus() >= 400) {
 				generator.revertLastCall();
 				LOG.log(Level.FINEST, "Received error response code: " + response.getStatus());

@@ -98,12 +98,15 @@ public class HTTPInputGenerator {
 	 * Builds a request using the HTTP client and current cookies.
 	 * @return The http client's initialized request.
 	 */
-	public Request initializeHTTPRequest(String url, String method, String payload) {
+	public Request initializeHTTPRequest(String url, String method, String payload, String auth) {
 	Request request;
 		if (method.equalsIgnoreCase("POST")) {
 			 request = httpClient.POST(url);
 			if (payload != null) {
 				request = request.content(new StringContentProvider(payload), "application/json");
+			}
+			if (auth != null) {
+				request = request.header("Authorization", auth);
 			}
 		} else {
 			request = httpClient.newRequest(url);

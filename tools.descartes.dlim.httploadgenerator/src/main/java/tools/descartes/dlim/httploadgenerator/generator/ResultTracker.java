@@ -17,10 +17,10 @@ package tools.descartes.dlim.httploadgenerator.generator;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.logging.Logger;
-import tools.descartes.dlim.httploadgenerator.http.ResponseTimeLog;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
+
+import tools.descartes.dlim.httploadgenerator.http.ResponseTimeLog;
 
 /**
  * Offers tracking of results, such as response times and
