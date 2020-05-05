@@ -63,7 +63,7 @@ public class HTTPTransaction extends Transaction {
 			if (url.startsWith(POST_SIGNAL)) {
 				method = "POST";
 			}
-			url = url.replaceFirst("\\[.*\\]", "");
+			url = url.replaceFirst("\\[.*?\\]", "");
 			if (url.startsWith("(")) {
 				auth = url.substring(1, url.indexOf(")"));
 				url = url.substring(url.indexOf(")") + 1);
