@@ -89,7 +89,6 @@ public class HTTPInputGenerator {
 			library.set("getMatches", new GetMatches(htmlFunctions));
 			library.set("extractMatches", new ExtractAllMatches(htmlFunctions));
 			luaGlobals.set("html", library);
-			luaGlobals.get("math").get("randomseed").call(LuaValue.valueOf(5));
 			luaGlobals.get("dofile").call(LuaValue.valueOf(scriptFile.getAbsolutePath()));
 		}
 	}
