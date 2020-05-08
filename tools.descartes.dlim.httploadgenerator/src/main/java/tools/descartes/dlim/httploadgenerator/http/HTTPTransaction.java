@@ -56,6 +56,7 @@ public class HTTPTransaction extends Transaction {
 					+ String.valueOf(processStartTime - getStartTime()) + " ms passed before transaction was even started.");
 		}
 		String url = generator.getNextInput().trim();
+		String fullurl = url;
 		String method = "GET";
 		String payload = null;
 		String auth = null;
@@ -85,7 +86,7 @@ public class HTTPTransaction extends Transaction {
 			} else {
 				String responseBody = response.getContentAsString();
 				long processStopTime = System.nanoTime();
-				ResultTracker.TRACKER.addResponseTimestamps(url, processStartTime, processStopTime);
+				ResultTracker.TRACKER.addResponseTimestamps(fullurl, processStartTime, processStopTime);
 				long responseTime = (processStopTime - processStartTime) / 1000000;
 				
 				//store result
