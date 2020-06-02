@@ -78,8 +78,8 @@ public class HTTPTransaction extends Transaction {
 		Request request = generator.initializeHTTPRequest(url, method, payload, auth);
 		try {
 			ContentResponse response = request.send();
-			System.out.println(response.getContentAsString());
 			if (response.getStatus() >= 400) {
+				System.out.println(fullurl + " " + response.getContentAsString() + " " + response.getReason());
 				generator.revertLastCall();
 				LOG.log(Level.FINEST, "Received error response code: " + response.getStatus());
 				throw new TransactionInvalidException("Error code: " + response.getStatus());
