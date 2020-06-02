@@ -51,7 +51,7 @@ public class HTTPTransaction extends Transaction {
 	 */
 	public long process(HTTPInputGenerator generator) throws TransactionDroppedException, TransactionInvalidException {
 		long processStartTime = System.nanoTime();
-		if (generator.getTimeout() > 0 && processStartTime - getStartTime() > generator.getTimeout()) {
+		if (generator.getTimeout() > 0 && System.currentTimeMillis() - getStartTime() > generator.getTimeout()) {
 			throw new TransactionDroppedException("Wait time in queue too long. "
 					+ String.valueOf(processStartTime - getStartTime()) + " ms passed before transaction was even started.");
 		}
