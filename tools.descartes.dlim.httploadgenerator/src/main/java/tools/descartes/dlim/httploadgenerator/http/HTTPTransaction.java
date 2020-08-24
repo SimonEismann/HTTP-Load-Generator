@@ -70,7 +70,7 @@ public class HTTPTransaction extends Transaction {
 				url = url.substring(url.indexOf(")") + 1);
 			}
 			if (url.startsWith("{")) {
-				payload = url.substring(0, url.lastIndexOf("}") + 1);
+				payload = url.substring(1, url.lastIndexOf("}"));
 				url = url.substring(url.lastIndexOf("}") + 1);
 			}
 		}

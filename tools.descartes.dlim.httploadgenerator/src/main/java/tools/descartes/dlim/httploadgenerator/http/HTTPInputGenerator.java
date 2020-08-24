@@ -102,7 +102,7 @@ public class HTTPInputGenerator {
 		if (method.equalsIgnoreCase("POST")) {
 			 request = httpClient.POST(url);
 			if (payload != null) {
-				request = request.content(new StringContentProvider(payload), "application/json");
+				request = request.content(new StringContentProvider(payload), "application/x-www-form-urlencoded");
 			}
 			if (auth != null) {
 				request = request.header("Authorization", auth);

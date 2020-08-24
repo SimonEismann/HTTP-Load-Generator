@@ -1,0 +1,8 @@
+.iml
+/classes/
+/.idea/
+/loadgeneratorparent.iml
+/tools.descartes.dlim.httploadgenerator/httploadgenerator.iml
+/tools.descartes.dlim.httpscripttester/httpscripttester.iml
+/tools.descartes.dlim.httpscripttester/src/main/java/META-INF/
+/tools.descartes.dlim.httploadgenerator/src/main/java/META-INF/
