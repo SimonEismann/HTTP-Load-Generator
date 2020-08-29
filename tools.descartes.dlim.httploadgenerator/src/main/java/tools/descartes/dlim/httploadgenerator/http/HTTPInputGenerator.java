@@ -16,6 +16,7 @@
 package tools.descartes.dlim.httploadgenerator.http;
 
 import java.io.File;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -46,7 +47,6 @@ public class HTTPInputGenerator {
 	private static final String LUA_CYCLE_INIT = "onCycle";
 	private static final String LUA_CALL = "onCall";
 
-
 	private final HttpClient httpClient;
 	
 	private int id;
@@ -57,6 +57,13 @@ public class HTTPInputGenerator {
 
 	private HTMLFunctions htmlFunctions = new HTMLFunctions("");
 	private Globals luaGlobals;
+
+	private Random userIDGenerator;
+	private static final int USER_ID_START = 100000000;
+	private static final int USER_ID_END = 1000000000;	// exclusive
+	private String[] userIDs;
+	private int userIDindex = 0;
+
 	/**
 	 * Constructs a new HTTPInputGenerator using a Lua generation script.
 	 * The Lua script must contain the onInit() and onCall(callnum) functions.
@@ -67,9 +74,12 @@ public class HTTPInputGenerator {
 	 * @param scriptFile The url generator script.
 	 * @param randomSeed Seed for Lua random function.
 	 * @param timeout The http read timeout.
+	 * @param userIDs
 	 */
-	public HTTPInputGenerator(int id, File scriptFile, int randomSeed, int timeout) {
+	public HTTPInputGenerator(int id, File scriptFile, int randomSeed, int timeout, String[] userIDs) {
 		this.id = id;
+		this.userIDGenerator = new Random(randomSeed);
+		this.userIDs = userIDs;
 		SslContextFactory sslContextFactory = new SslContextFactory();
 		httpClient = new HttpClient(sslContextFactory);
 		
@@ -98,7 +108,7 @@ public class HTTPInputGenerator {
 	 * @return The http client's initialized request.
 	 */
 	public Request initializeHTTPRequest(String url, String method, String payload, String auth) {
-	Request request;
+		Request request;
 		if (method.equalsIgnoreCase("POST")) {
 			 request = httpClient.POST(url);
 			if (payload != null) {
@@ -148,8 +158,22 @@ public class HTTPInputGenerator {
 		}
 		LuaValue cycleInit = luaGlobals.get(LUA_CYCLE_INIT);
 		if (!cycleInit.isnil()) {
-			cycleInit.call();
+			cycleInit.call(getNextUserID());
 		}
+	}
+
+	private LuaValue getNextUserID(){
+		LuaValue res;
+		if(this.userIDs != null) {
+			res = LuaValue.valueOf(this.userIDs[this.userIDindex]);
+			this.userIDindex++;
+			if(this.userIDindex >= this.userIDs.length) {
+				this.userIDindex = 0;
+			}
+		}else{
+			res = LuaValue.valueOf(USER_ID_START + userIDGenerator.nextInt(USER_ID_END - USER_ID_START));
+		}
+		return res;
 	}
 
 	/**

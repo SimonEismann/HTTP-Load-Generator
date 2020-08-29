@@ -104,7 +104,7 @@ public class ArrivalRateTupleLoadGenerator extends AbstractLoadGenerator {
 	 */
 	@Override
 	protected void process(boolean randomBatchTimes, int seed,
-			int warmupDurationS, double warmupLoadIntensity, int warmupPauseS, boolean randomizeUsers) {
+			int warmupDurationS, double warmupLoadIntensity, int warmupPauseS, boolean randomizeUsers, String userIDFile) {
 		r.setSeed(seed);
 
 		try {
@@ -113,7 +113,7 @@ public class ArrivalRateTupleLoadGenerator extends AbstractLoadGenerator {
 			if (randomizeUsers) {
 				mode = HTTPInputGeneratorPool.PoolMode.RANDOM;
 			}
-			HTTPInputGeneratorPool.initializePool(mode, getScriptPath(), numberOfThreads, getTimeout(), seed);
+			HTTPInputGeneratorPool.initializePool(mode, getScriptPath(), numberOfThreads, getTimeout(), seed, userIDFile);
 			LinkedBlockingQueue<Runnable> executorQueue = new LinkedBlockingQueue<Runnable>();
 			executor = new ThreadPoolExecutor(numberOfThreads, numberOfThreads, 0, TimeUnit.MILLISECONDS,
 					executorQueue);

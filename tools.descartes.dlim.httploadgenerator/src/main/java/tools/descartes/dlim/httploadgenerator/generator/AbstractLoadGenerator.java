@@ -52,6 +52,8 @@ public abstract class AbstractLoadGenerator extends Thread {
 	/** Socket for connection the the director on the controller machine. */
 	private Socket director;
 
+	private static String userIDfile;
+
 	/**
 	 * Buffered reader for communication with the director on the controller
 	 * machine.
@@ -77,8 +79,10 @@ public abstract class AbstractLoadGenerator extends Thread {
 
 	/**
 	 * Starting point for executing the load generator mode.
+	 * @param userIDfilepath
 	 */
-	public static void executeLoadGenerator() {
+	public static void executeLoadGenerator(String userIDfilepath) {
+		userIDfile = userIDfilepath;
 
 		ServerSocket server = null;
 
@@ -239,7 +243,7 @@ public abstract class AbstractLoadGenerator extends Thread {
 		if (!script.exists()) {
 			error("Temporary load generator side script not found at " + TMP_SCRIPT_PATH);
 		}
-		process(randomBatchTimes, seed, warmupDurationS, warmupLoad, warmupPauseS, randomizeUsers);
+		process(randomBatchTimes, seed, warmupDurationS, warmupLoad, warmupPauseS, randomizeUsers, userIDfile);
 		out.println(IRunnerConstants.DONE_KEY);
 	}
 	
@@ -279,7 +283,7 @@ public abstract class AbstractLoadGenerator extends Thread {
 	 * 			  False if they should be taken from a queue in order.
 	 */
 	protected abstract void process(boolean randomBatchTimes, int seed,
-			int warmupDurationS, double warmupLoadIntensity, int warmupPauseS, boolean randomizeUsers);
+			int warmupDurationS, double warmupLoadIntensity, int warmupPauseS, boolean randomizeUsers, String userIDFile);
 
 	/**
 	 * Sending results to the director after every interval.

@@ -15,6 +15,7 @@
  */
 package tools.descartes.dlim.httploadgenerator.runner.cli;
 
+import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import tools.descartes.dlim.httploadgenerator.generator.AbstractLoadGenerator;
 
@@ -33,9 +34,13 @@ description = "Runs the load generator in director mode. The director parses con
  */
 public class LoadGeneratorCommand implements Runnable {
 
+	@CommandLine.Option(names = {"--user-id-file"},
+			description="filepath to list of user IDs to use during load generation in the onCycle() function. Split across threads.")
+	private String userIDfilepath =  null;
+
 	@Override
 	public void run() {
-		AbstractLoadGenerator.executeLoadGenerator();
+		AbstractLoadGenerator.executeLoadGenerator(userIDfilepath);
 	}
 
 }

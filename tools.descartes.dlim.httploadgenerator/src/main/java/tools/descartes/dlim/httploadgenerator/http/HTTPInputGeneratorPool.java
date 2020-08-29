@@ -15,7 +15,8 @@
  */
 package tools.descartes.dlim.httploadgenerator.http;
 
-import java.io.File;
+import java.io.*;
+import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
@@ -41,7 +42,7 @@ public final class HTTPInputGeneratorPool {
 	private ConcurrentHashMap<Integer,HTTPInputGenerator> map;
 	private Semaphore mapAccessControlSemaphore;
 	
-	private HTTPInputGeneratorPool(PoolMode mode, String luaScriptPath, int threadCount, int timeout, int randomSeed) {
+	private HTTPInputGeneratorPool(PoolMode mode, String luaScriptPath, int threadCount, int timeout, int randomSeed, String userIDFile) {
 		this.mode = mode;
 		queue = new LinkedBlockingQueue<>();
 		map = new ConcurrentHashMap<>();
@@ -55,15 +56,52 @@ public final class HTTPInputGeneratorPool {
 		if (!script.exists()) {
 			LOG.severe("Lua script does not exist at: " + luaScriptPath);
 		}
+		String[][] userIDs = null;
+		if(userIDFile != null) {
+			try{
+				userIDs = parseUserIDs(userIDFile, threadCount);
+			} catch (IOException ex) {
+				LOG.severe("Could not load specified userID file: " + ex.getMessage());
+			}
+		}
+
 		 // We place as many input generators as threads in the pool.
 		for (int i = 0; i < threadCount; i++) {
-			addInputGenerator(new HTTPInputGenerator(i, script, i, timeout));
+			addInputGenerator(new HTTPInputGenerator(i, script, i, timeout, (userIDs == null ? null : userIDs[i])));
 		}
 		if (mode.equals(PoolMode.QUEUE)) {
 			LOG.info("Created pool of " + queue.size() + " users (LUA contexts, HTTP input generators).");
 		} else {
 			LOG.info("Created pool of " + map.size() + " users (LUA contexts, HTTP input generators).");
 		}
+	}
+
+	private String[][] parseUserIDs(String filepath, int threadcount) throws IOException {
+		boolean enoughIDs = false;
+		File file = new File(filepath);
+		BufferedReader br = new BufferedReader(new FileReader(file));
+		String string;
+		ArrayList<String>[] tmp = new ArrayList[threadcount];
+		int i = 0;
+		while ((string = br.readLine()) != null) {
+			if (tmp[i] == null) {
+				tmp[i] = new ArrayList<>();
+			}
+			tmp[i].add(string.replaceAll("\\W", ""));
+			i++;
+			if (i >= tmp.length) {
+				i = 0;
+				enoughIDs = true;
+			}
+		}
+		if (!enoughIDs) {
+			throw new IOException("Less user IDs in user ID file than threads!");
+		}
+		String[][] res = new String[threadcount][];
+		for (int j = 0; j < threadcount; j++) {
+			res[j] = (String[]) tmp[j].toArray();
+		}
+		return res;
 	}
 	
 	private void addInputGenerator(HTTPInputGenerator generator) {
@@ -96,8 +134,8 @@ public final class HTTPInputGeneratorPool {
 	 * @param threadCount The number of threads that will be used to access the pool.
 	 * @param timeout The http url connection timeout.
 	 */
-	public static void initializePool(PoolMode mode, String luaScriptPath, int threadCount, int timeout, int randomSeed) {
-		pool = new HTTPInputGeneratorPool(mode, luaScriptPath, threadCount, timeout, randomSeed);
+	public static void initializePool(PoolMode mode, String luaScriptPath, int threadCount, int timeout, int randomSeed, String userIDFile) {
+		pool = new HTTPInputGeneratorPool(mode, luaScriptPath, threadCount, timeout, randomSeed, userIDFile);
 	}
 	
 	/**
