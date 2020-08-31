@@ -17,6 +17,7 @@ package tools.descartes.dlim.httploadgenerator.http;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
@@ -77,29 +78,19 @@ public final class HTTPInputGeneratorPool {
 	}
 
 	private String[][] parseUserIDs(String filepath, int threadcount) throws IOException {
-		boolean enoughIDs = false;
 		File file = new File(filepath);
 		BufferedReader br = new BufferedReader(new FileReader(file));
-		String string;
-		ArrayList<String>[] tmp = new ArrayList[threadcount];
-		int i = 0;
+		String string = null;
+		ArrayList<String> lines = new ArrayList<>();
 		while ((string = br.readLine()) != null) {
-			if (tmp[i] == null) {
-				tmp[i] = new ArrayList<>();
-			}
-			tmp[i].add(string.replaceAll("\\W", ""));
-			i++;
-			if (i >= tmp.length) {
-				i = 0;
-				enoughIDs = true;
-			}
+			lines.add(string.replaceAll("\\W", ""));
 		}
-		if (!enoughIDs) {
-			throw new IOException("Less user IDs in user ID file than threads!");
-		}
+		int linesPerThread = lines.size() / threadcount;
 		String[][] res = new String[threadcount][];
 		for (int j = 0; j < threadcount; j++) {
-			res[j] = (String[]) tmp[j].toArray();
+			List<String> threadUsers = lines.subList(j * linesPerThread, (j < threadcount - 1) ? ((j + 1) * linesPerThread) : lines.size());
+			res[j] = threadUsers.toArray(new String[threadUsers.size()]);
+			System.out.println("user IDs thread " + j + ": " + threadUsers.toString());
 		}
 		return res;
 	}
