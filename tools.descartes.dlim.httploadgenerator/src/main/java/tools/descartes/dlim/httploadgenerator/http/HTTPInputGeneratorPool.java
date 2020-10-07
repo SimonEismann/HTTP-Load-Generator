@@ -90,7 +90,6 @@ public final class HTTPInputGeneratorPool {
 		for (int j = 0; j < threadcount; j++) {
 			List<String> threadUsers = lines.subList(j * linesPerThread, (j < threadcount - 1) ? ((j + 1) * linesPerThread) : lines.size());
 			res[j] = threadUsers.toArray(new String[threadUsers.size()]);
-			System.out.println("user IDs thread " + j + ": " + threadUsers.toString());
 		}
 		return res;
 	}
