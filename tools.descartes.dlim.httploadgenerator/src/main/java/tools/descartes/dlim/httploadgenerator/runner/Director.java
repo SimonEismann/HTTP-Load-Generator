@@ -19,13 +19,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import tools.descartes.dlim.httploadgenerator.generator.ArrivalRateTuple;
 import tools.descartes.dlim.httploadgenerator.generator.ResultTracker;
@@ -155,7 +153,6 @@ public class Director extends Thread {
 	 * Actually run the director. Sends the messages to the load generator and collects data.
 	 * @param file The arrival rate file.
 	 * @param outName The name of the output log.
-	 * @param scanner The scanner for reading user start signal from console.
 	 * @param randomBatchTimes True if batches are scheduled using a randomized distribution.
 	 * @param threadCount The number of threads that generate load.
 	 * @param timeout The connection timeout for the HTTP url connections.
@@ -347,12 +344,9 @@ public class Director extends Thread {
 	private void logState(IntervalResult result, List<IPowerCommunicator> powerCommunicators,
 			PrintWriter writer) {
 		//get Power
-		List<Double> powers = null;
+		Map<String, Double> powersMap = null;	// map communicatorName -> powerMeasurement
 		if (powerCommunicators != null && !powerCommunicators.isEmpty()) {
-			powers = new ArrayList<>(powerCommunicators.size());
-			for (IPowerCommunicator pc : powerCommunicators) {
-				powers.add(pc.getPowerMeasurement());
-			}
+			powersMap = powerCommunicators.parallelStream().collect(Collectors.toMap(IPowerCommunicator::getCommunicatorName, IPowerCommunicator::getPowerMeasurement));
 		}
 		System.out.println("Target Time = " + result.getTargetTime()
 				+ "; Load Intensity = " + result.getLoadIntensity()
@@ -365,8 +359,10 @@ public class Director extends Thread {
 					+ result.getSuccessfulTransactions() + "," + result.getFailedTransactions() + ","
 					+ result.getDroppedTransactions() + "," + result.getAvgResponseTime() + ","
 					+ result.getFinalBatchTime());
-			if (powers != null && !powers.isEmpty()) {
-				powers.stream().forEachOrdered(p -> writer.print("," + p));
+			if (powersMap != null && !powersMap.isEmpty()) {
+				for (IPowerCommunicator pc : powerCommunicators) {
+					writer.print("," + powersMap.get(pc.getCommunicatorName()));
+				}
 			}
 			writer.println("");
 		}
