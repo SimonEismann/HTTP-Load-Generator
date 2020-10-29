@@ -196,11 +196,11 @@ public class LoadGeneratorCommunicator {
 	}
 	
 	/**
-	 * Returns true if this communcator has received the done signal.
+	 * Returns true if this communicator has received the done signal and all previous messages have been processed. (Simon Trapp)
 	 * @return The finshed flag.
 	 */
 	public synchronized boolean isFinished() {
-		return finished;
+		return finished && (resultMessageQueue.isEmpty() || (resultMessageQueue.size() == 1 && resultMessageQueue.contains(IRunnerConstants.DONE_KEY)));
 	}
 
 	private synchronized void setFinished(boolean finished) {
