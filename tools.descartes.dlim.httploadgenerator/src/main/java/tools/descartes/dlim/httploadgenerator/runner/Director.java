@@ -15,6 +15,10 @@
  */
 package tools.descartes.dlim.httploadgenerator.runner;
 
+import tools.descartes.dlim.httploadgenerator.generator.ArrivalRateTuple;
+import tools.descartes.dlim.httploadgenerator.generator.ResultTracker;
+import tools.descartes.dlim.httploadgenerator.power.IPowerCommunicator;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -22,12 +26,9 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import tools.descartes.dlim.httploadgenerator.generator.ArrivalRateTuple;
-import tools.descartes.dlim.httploadgenerator.generator.ResultTracker;
-import tools.descartes.dlim.httploadgenerator.power.IPowerCommunicator;
 
 /**
  * Director that is run in director mode.
@@ -41,6 +42,8 @@ public class Director extends Thread {
 	private static int seed = 5;
 
 	private List<LoadGeneratorCommunicator> communicators;
+
+	private AtomicInteger logThreadCount = new AtomicInteger();
 	
 	/**
 	 * Execute the director with the given parameters.
@@ -224,8 +227,10 @@ public class Director extends Thread {
 			ResultTracker.TRACKER.getTimestamps().clear();
 			
 			//get Data from LoadGenerator
-			IntervalResult result;
-			while (!(result = collectResultRound()).isMeasurementConcluded()) {
+			logThreadCount.set(0);
+			while (true) {
+				IntervalResult result = collectResultRound();
+				if (result.isMeasurementConcluded()) break;
 				//Check if a result for time 0 is sent. This result is only sent if warmup occured.
 				if (result.getTargetTime() == 0.0) {
 					timeZero = System.currentTimeMillis();
@@ -234,7 +239,12 @@ public class Director extends Thread {
 					System.out.println("Starting Measurement @" + timeZero + "(" + dateString + ")");
 					writer.println("," + dateString);
 				}
+				logThreadCount.incrementAndGet();
 				logState(result, powerCommunicators, writer);
+			}
+			while (logThreadCount.get() > 0) {
+				LOG.info("Waiting for " + logThreadCount.get() + " threads to obtain logs.");
+				wait(1000);
 			}
 			System.out.println("Workload finished.");
 			writer.close();
@@ -249,11 +259,12 @@ public class Director extends Thread {
 			LOG.severe("File not found: " + e.getMessage()  + "\n\t"
 					+ "Did you specify the location of all files? "
 					+ "Consult \"java -jar ... director --help\" for the necessary command line switches.");
+		} catch (InterruptedException e) {
+			LOG.severe("Director Thread interrupted while waiting for log retrieval to end. " + e.getMessage());
 		}
 	}
 	
-	private static void initializePowerCommunicators(List<IPowerCommunicator> pcList,
-			String pcClassName, String[] addresses) {
+	private static void initializePowerCommunicators(List<IPowerCommunicator> pcList, String pcClassName, String[] addresses) {
 		for (String address : addresses) {
 			if (!address.trim().isEmpty()) {
 				String[] host = address.split(":");
@@ -341,31 +352,36 @@ public class Director extends Thread {
 				droppedTransactions, avgResponseTime, finalBatchTime);
 	}
 
-	private void logState(IntervalResult result, List<IPowerCommunicator> powerCommunicators,
-			PrintWriter writer) {
-		//get Power
-		Map<String, Double> powersMap = null;	// map communicatorName -> powerMeasurement
-		if (powerCommunicators != null && !powerCommunicators.isEmpty()) {
-			powersMap = powerCommunicators.parallelStream().collect(Collectors.toMap(IPowerCommunicator::getCommunicatorName, IPowerCommunicator::getPowerMeasurement));
-		}
-		System.out.println("Target Time = " + result.getTargetTime()
-				+ "; Load Intensity = " + result.getLoadIntensity()
-				+ "; #Success = " + result.getSuccessfulTransactions()
-				+ "; #Failed = " + result.getFailedTransactions()
-				+ "; #Dropped = " + result.getDroppedTransactions());
-		//warmup has target times <= 0, ignore it
-		if (result.getTargetTime() > 0) {
-			writer.print(result.getTargetTime() + "," + result.getLoadIntensity() + ","
-					+ result.getSuccessfulTransactions() + "," + result.getFailedTransactions() + ","
-					+ result.getDroppedTransactions() + "," + result.getAvgResponseTime() + ","
-					+ result.getFinalBatchTime());
-			if (powersMap != null && !powersMap.isEmpty()) {
-				for (IPowerCommunicator pc : powerCommunicators) {
-					writer.print("," + powersMap.get(pc.getCommunicatorName()));
-				}
+	private void logState(IntervalResult result, List<IPowerCommunicator> powerCommunicators, PrintWriter writer) {
+		Runnable logStateTask = () -> {
+			//get Power
+			Map<String, Double> powersMap = null;	// map communicatorName -> powerMeasurement
+			if (powerCommunicators != null && !powerCommunicators.isEmpty()) {
+				powersMap = powerCommunicators.parallelStream().collect(Collectors.toMap(IPowerCommunicator::getCommunicatorName, IPowerCommunicator::getPowerMeasurement));
 			}
-			writer.println("");
-		}
+			System.out.println("Target Time = " + result.getTargetTime()
+					+ "; Load Intensity = " + result.getLoadIntensity()
+					+ "; #Success = " + result.getSuccessfulTransactions()
+					+ "; #Failed = " + result.getFailedTransactions()
+					+ "; #Dropped = " + result.getDroppedTransactions());
+			//warmup has target times <= 0, ignore it
+			if (result.getTargetTime() > 0) {
+				StringBuilder outputString = new StringBuilder(result.getTargetTime() + "," + result.getLoadIntensity() + ","
+						+ result.getSuccessfulTransactions() + "," + result.getFailedTransactions() + ","
+						+ result.getDroppedTransactions() + "," + result.getAvgResponseTime() + ","
+						+ result.getFinalBatchTime());
+				if (powersMap != null && !powersMap.isEmpty()) {
+					for (IPowerCommunicator pc : powerCommunicators) {
+						outputString.append(",").append(powersMap.get(pc.getCommunicatorName()));
+					}
+				}
+				writer.println(outputString.toString());
+			}
+			logThreadCount.decrementAndGet();
+		};
+		Thread logStateTaskExecutor = new Thread(logStateTask);
+		logStateTaskExecutor.setDaemon(true);
+		logStateTaskExecutor.run();
 	}
 
 }
