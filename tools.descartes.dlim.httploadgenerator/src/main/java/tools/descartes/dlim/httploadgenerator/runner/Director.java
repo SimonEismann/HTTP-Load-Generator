@@ -244,7 +244,7 @@ public class Director extends Thread {
 			}
 			while (logThreadCount.get() > 0) {
 				LOG.info("Waiting for " + logThreadCount.get() + " threads to obtain logs.");
-				wait(1000);
+				sleep(1000);
 			}
 			System.out.println("Workload finished.");
 			writer.close();
