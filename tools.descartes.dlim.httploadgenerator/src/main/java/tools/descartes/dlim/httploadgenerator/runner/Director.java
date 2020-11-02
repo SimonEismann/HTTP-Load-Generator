@@ -15,6 +15,7 @@
  */
 package tools.descartes.dlim.httploadgenerator.runner;
 
+import hipstershop.power.PowerCommunicatorImpl;
 import tools.descartes.dlim.httploadgenerator.generator.ArrivalRateTuple;
 import tools.descartes.dlim.httploadgenerator.generator.ResultTracker;
 import tools.descartes.dlim.httploadgenerator.power.IPowerCommunicator;
@@ -87,17 +88,8 @@ public class Director extends Thread {
 			}
 			
 			//Power measurement
-			if (powerCommunicatorClassName != null && !powerCommunicatorClassName.trim().isEmpty()
-					&& powerIPs != null && !(powerIPs.length == 0)) {
-				initializePowerCommunicators(powerCommunicators, powerCommunicatorClassName, powerIPs);
-			} else if (powerCommunicatorClassName != null && !powerCommunicatorClassName.trim().isEmpty()
-					&& (powerIPs == null || powerIPs.length == 0)) {
-				LOG.warning("Power Communicator class provided, but no power communication address specified."
-						+ " No power measurements will be performed.");
-			} else if ((powerCommunicatorClassName == null || powerCommunicatorClassName.trim().isEmpty())
-						&& powerIPs != null && !(powerIPs.length == 0)) {
-					LOG.warning("Power communication address specified but no Power Communicator class provided."
-							+ " No power measurements will be performed.");
+			if (powerIPs != null && !(powerIPs.length == 0)) {
+				initializePowerCommunicators(powerCommunicators, powerIPs);
 			} else {
 				LOG.warning("No power measurements");
 			}
@@ -264,7 +256,7 @@ public class Director extends Thread {
 		}
 	}
 	
-	private static void initializePowerCommunicators(List<IPowerCommunicator> pcList, String pcClassName, String[] addresses) {
+	private static void initializePowerCommunicators(List<IPowerCommunicator> pcList, String[] addresses) {
 		for (String address : addresses) {
 			if (!address.trim().isEmpty()) {
 				String[] host = address.split(":");
@@ -274,20 +266,10 @@ public class Director extends Thread {
 				}
 				
 				try {
-					Class<? extends IPowerCommunicator> pcClass
-						= Class.forName(pcClassName.trim()).asSubclass(IPowerCommunicator.class);
-					IPowerCommunicator powerCommunicator = pcClass.newInstance();
+					IPowerCommunicator powerCommunicator = new PowerCommunicatorImpl();
 					powerCommunicator.initializePowerCommunicator(host[0].trim(), port);
 					LOG.info("Initializing Power Communicator for address: " + host[0].trim() + ":" + port);
 					pcList.add(powerCommunicator);
-				} catch (ClassNotFoundException e) {
-					LOG.severe("PowerCommunicator class not found: " + pcClassName);
-				} catch (InstantiationException e) {
-					LOG.severe("PowerCommunicator class could not be instantiated: " + pcClassName);
-					LOG.severe(e.getMessage());
-				} catch (IllegalAccessException e) {
-					LOG.severe("PowerCommunicator class could not be accessed: " + pcClassName);
-					LOG.severe(e.getMessage());
 				} catch (IOException e) {
 					LOG.severe("IOException initializing power communicator: " + e.getMessage());
 				}
