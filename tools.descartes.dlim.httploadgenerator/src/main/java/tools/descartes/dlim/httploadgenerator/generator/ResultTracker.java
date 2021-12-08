@@ -48,15 +48,13 @@ public final class ResultTracker {
 	private AtomicLong responseTimeSum = new AtomicLong(0);
 	private AtomicLong responseTimeLogCount = new AtomicLong(0);
 	
-	private ResultTracker() {
-		
-	}
+	private ResultTracker() {}
 	
 	public synchronized void addResponseTimestamps(String url, long start, long stop) {
 		responseTimestamps.add(new ResponseTimeLog(url, start, stop));
 	}
 	
-public void logTransaction(long responseTimeMs, TransactionState finishingState) {
+	public void logTransaction(long responseTimeMs, TransactionState finishingState) {
 		transactionLock.lock();
 		try {
 			switch (finishingState) {
@@ -78,7 +76,7 @@ public void logTransaction(long responseTimeMs, TransactionState finishingState)
 		} finally {
 			transactionLock.unlock();
 		}
-}
+	}
 	
 	/**
 	 * Resets the validity tracker.

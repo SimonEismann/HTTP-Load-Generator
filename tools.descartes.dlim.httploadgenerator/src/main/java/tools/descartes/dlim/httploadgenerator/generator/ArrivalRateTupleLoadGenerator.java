@@ -201,17 +201,17 @@ public class ArrivalRateTupleLoadGenerator extends AbstractLoadGenerator {
 
 	private void writeTimestampLogs() {
 		 try {
-			BufferedWriter writer = Files.newBufferedWriter(Paths.get("./timestamps.csv"));
-			CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT
-                    .withHeader("Url", "Start", "Stop"));
-			for (ResponseTimeLog pair: ResultTracker.TRACKER.getTimestamps())
-				csvPrinter.printRecord(pair.url, pair.start, pair.end);
-			csvPrinter.flush();
-			csvPrinter.close();
-			ResultTracker.TRACKER.getTimestamps().clear();
+			 LOG.log(Level.INFO, "Writing " + ResultTracker.TRACKER.getTimestamps().size() + " HTTP request timestamps to ./timestamps.csv");
+			 BufferedWriter writer = Files.newBufferedWriter(Paths.get("./timestamps.csv"));
+			 CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader("Url", "Start", "Stop"));
+			 for (ResponseTimeLog pair: ResultTracker.TRACKER.getTimestamps())
+				 csvPrinter.printRecord(pair.url, pair.start, pair.end);
+			 csvPrinter.flush();
+			 csvPrinter.close();
+			 ResultTracker.TRACKER.getTimestamps().clear();
 		 } catch (IOException e) {
-			e.printStackTrace();
-		}
+			 e.printStackTrace();
+		 }
 
 	}
 
