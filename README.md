@@ -9,9 +9,7 @@
 ```shell
 # https://serverfault.com/questions/517906/how-to-expose-a-unix-domain-socket-directly-over-tcp
 # creates a proxy to forward TCP (HTTP) traffic (e.g., port 12345) to the docker API
-socat TCP-LISTEN:12345 UNIX-CONNECT:/var/run/docker.sock &
-# or maybe better:
-socat TCP-LISTEN:12345,reuseaddr,fork,su=haproxy UNIX-CLIENT:/var/run/docker.sock &
+sudo socat TCP-LISTEN:12345,reuseaddr,fork UNIX-CLIENT:/var/run/docker.sock &
 ```
 
 # HTTP Load Generator
