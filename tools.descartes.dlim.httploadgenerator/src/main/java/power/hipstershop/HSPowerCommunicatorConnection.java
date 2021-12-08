@@ -1,10 +1,10 @@
-package hipstershop.power;
+package power.hipstershop;
 
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
-public class PowerCommunicatorConnection {
+public class HSPowerCommunicatorConnection {
 
     private final String hostname;
     private final int port;
@@ -12,7 +12,7 @@ public class PowerCommunicatorConnection {
     private volatile double result = 0.0;
     private Thread updateThread = null;
 
-    public PowerCommunicatorConnection(String hostname, int port) {
+    public HSPowerCommunicatorConnection(String hostname, int port) {
         this.hostname = hostname;
         this.port = port;
     }

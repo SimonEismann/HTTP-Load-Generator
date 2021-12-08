@@ -1,3 +1,19 @@
+# Changes
+
+- The payload data type for POST requests is `application/x-www-form-urlencoded` instead of `application/json`.
+- You can specify a list of custom user ids to be used by the `generator` mode instead of random ones (see Simon Eismann's `microservices-demo`).
+- The `-c` option in `director` mode allows the choice between 2 power communicator implementations `hipstershop` and `docker`.
+  - The `hipstershop` mode is meant to be used for the `microservices-demo` applications and its power daemons. The addresses of the daemons in `-p` are comma-separated values `<IP>:<PORT>,<IP>:<PORT>`.
+  - The `docker` mode requests resource utilization from a docker API over HTTP. The addresses of the daemons in `-p` are comma-separated values `<IP>:<PORT>:<CONTAINER_ID>,<IP>:<PORT>:<CONTAINER_ID>`.
+
+```shell
+# https://serverfault.com/questions/517906/how-to-expose-a-unix-domain-socket-directly-over-tcp
+# creates a proxy to forward TCP (HTTP) traffic (e.g., port 12345) to the docker API
+socat TCP-LISTEN:12345 UNIX-CONNECT:/var/run/docker.sock &
+# or maybe better:
+socat TCP-LISTEN:12345,reuseaddr,fork,su=haproxy UNIX-CLIENT:/var/run/docker.sock &
+```
+
 # HTTP Load Generator
 
 Download the binary [here](https://gitlab2.informatik.uni-wuerzburg.de/descartes/httploadgenerator/raw/master/httploadgenerator.jar). Also, please consider [citing us](#7-cite-us).

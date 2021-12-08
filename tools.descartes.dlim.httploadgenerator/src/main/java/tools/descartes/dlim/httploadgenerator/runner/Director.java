@@ -15,7 +15,8 @@
  */
 package tools.descartes.dlim.httploadgenerator.runner;
 
-import hipstershop.power.PowerCommunicatorImpl;
+import power.docker.DockerPowerCommunicatorImpl;
+import power.hipstershop.HSPowerCommunicatorImpl;
 import tools.descartes.dlim.httploadgenerator.generator.ArrivalRateTuple;
 import tools.descartes.dlim.httploadgenerator.generator.ResultTracker;
 import tools.descartes.dlim.httploadgenerator.power.IPowerCommunicator;
@@ -89,7 +90,7 @@ public class Director extends Thread {
 			
 			//Power measurement
 			if (powerIPs != null && !(powerIPs.length == 0)) {
-				initializePowerCommunicators(powerCommunicators, powerIPs);
+				initializePowerCommunicators(powerCommunicators, powerCommunicatorClassName, powerIPs);
 			} else {
 				LOG.warning("No power measurements");
 			}
@@ -256,7 +257,7 @@ public class Director extends Thread {
 		}
 	}
 	
-	private static void initializePowerCommunicators(List<IPowerCommunicator> pcList, String[] addresses) {
+	private static void initializePowerCommunicators(List<IPowerCommunicator> pcList, String pcClassName, String[] addresses) {
 		for (String address : addresses) {
 			if (!address.trim().isEmpty()) {
 				String[] host = address.split(":");
@@ -266,7 +267,17 @@ public class Director extends Thread {
 				}
 				
 				try {
-					IPowerCommunicator powerCommunicator = new PowerCommunicatorImpl();
+					IPowerCommunicator powerCommunicator;
+					if ("hipstershop".equals(pcClassName)) {
+						powerCommunicator = new HSPowerCommunicatorImpl();
+					} else if ("docker".equals(pcClassName)) {
+						if (host.length < 3) {
+							throw new IllegalStateException("In docker mode, all daemon addresses have to be specified as <IP>:<PORT>:<CONTAINER_ID>!");
+						}
+						powerCommunicator = new DockerPowerCommunicatorImpl(host[2]);
+					} else {
+						throw new IllegalStateException("The specified power communicator class \"" + pcClassName + "\" is not implemented!");
+					}
 					powerCommunicator.initializePowerCommunicator(host[0].trim(), port);
 					LOG.info("Initializing Power Communicator for address: " + host[0].trim() + ":" + port);
 					pcList.add(powerCommunicator);

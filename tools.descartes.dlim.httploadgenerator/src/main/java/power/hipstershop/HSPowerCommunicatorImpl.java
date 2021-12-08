@@ -1,14 +1,14 @@
-package hipstershop.power;
+package power.hipstershop;
 
 import tools.descartes.dlim.httploadgenerator.power.IPowerCommunicator;
 
 import java.io.IOException;
 
-public class PowerCommunicatorImpl implements IPowerCommunicator {
+public class HSPowerCommunicatorImpl implements IPowerCommunicator {
 
     private String hostname = "localhost";
     private int port = 22442;
-    private PowerCommunicatorConnection conn = null;
+    private HSPowerCommunicatorConnection conn = null;
 
     @Override
     public void initializePowerCommunicator(String hostname, int port) throws IOException {
@@ -17,7 +17,7 @@ public class PowerCommunicatorImpl implements IPowerCommunicator {
         if (conn != null) {
             conn.close();
         }
-        this.conn = new PowerCommunicatorConnection(this.hostname, this.port);
+        this.conn = new HSPowerCommunicatorConnection(this.hostname, this.port);
         this.conn.initialize();
     }
 
